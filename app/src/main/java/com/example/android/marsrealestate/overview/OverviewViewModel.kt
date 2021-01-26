@@ -32,14 +32,20 @@ import java.lang.Exception
 /**
  * The [ViewModel] that is attached to the [OverviewFragment].
  */
+
+enum class MarsApiStatus { LOADING, ERROR, DONE }
+
 class OverviewViewModel : ViewModel() {
 
-    // The internal MutableLiveData String that stores the most recent response
-    private val _response = MutableLiveData<String>()
+    private val _properties = MutableLiveData<List<MarsProperty>>()
 
-    // The external immutable LiveData for the response String
-    val response: LiveData<String>
-        get() = _response
+    val properties: LiveData<List<MarsProperty>>
+        get() = _properties
+
+    private val _status = MutableLiveData<MarsApiStatus>()
+
+    val status: LiveData<MarsApiStatus>
+        get() = _status
 
     /**
      * Call getMarsRealEstateProperties() on init so we can display status immediately.
@@ -54,15 +60,13 @@ class OverviewViewModel : ViewModel() {
     private fun getMarsRealEstateProperties() {
 
         viewModelScope.launch {
+            _status.value = MarsApiStatus.LOADING
             try {
-                val listResult = MarsApi.retrofitService.getProperties()
-                _response.value =
-                        "Success: ${listResult.size} Mars properties retrieved"
-            }
-            catch(e:Exception) {
-                _response.value = "Failure: ${e.message}"
+                _properties.value = MarsApi.retrofitService.getProperties()
+                _status.value = MarsApiStatus.DONE
+            } catch (e: Exception) {
+                _status.value = MarsApiStatus.ERROR
             }
         }
-
     }
 }
